@@ -987,9 +987,99 @@ public class JavaGenerator implements CodeGenerator
                 fieldLength,
                 offset
             ));
+
+            varLengthMaxWidth(sb, token, containingClassName, propertyName, indent, offset, fieldLength);
         }
 
         return sb;
+    }
+
+    private void varLengthMaxWidth(StringBuilder sb, Token token, String containingClassName, String propertyName, String indent, Integer offset, Integer fieldLength) {
+
+
+        sb.append(String.format(
+                        indent + "    public int get%sEx(final byte[] dst, final int dstOffset)\n" +
+                        indent + "    {\n" +
+                        indent + "        final int width = %d;\n" +
+                        indent + "        final int dataLength = CodecUtil.uint8Get(buffer, this.offset + %d);\n" +
+                        indent + "        final int sizeOfLengthField = 1;\n" +
+                        indent + "        if (dstOffset < 0 || dstOffset > (dst.length - dataLength))\n" +
+                        indent + "        {\n" +
+                        indent + "            throw new IndexOutOfBoundsException(" +
+                        indent + "                \"dstOffset out of range for copy: offset=\" + dstOffset);\n" +
+                        indent + "        }\n\n" +
+                        "%s" +
+                        indent + "        CodecUtil.charsGet(buffer, this.offset + %d + sizeOfLengthField, " +
+                                 "dst, dstOffset, dataLength);\n" +
+                        indent + "        return dataLength;\n" +
+                        indent + "    }\n\n",
+                toUpperFirstChar(propertyName),
+                fieldLength,
+                offset,
+                generateArrayFieldNotPresentCondition(token.version(), indent),
+                offset
+        ));
+
+        sb.append(String.format(
+                        indent + "    public String get%sEx()\n" +
+                        indent + "    {\n" +
+                        indent + "        try {\n" +
+                        indent + "            byte[] tmp = new byte[%d];\n" +
+                        indent + "            return new String(tmp, 0, get%sEx(tmp, 0), %sCharacterEncoding());\n" +
+                        indent + "        } catch (final java.io.UnsupportedEncodingException ex) {\n" +
+                        indent + "            throw new RuntimeException(ex);\n" +
+                        indent + "        }\n" +
+                        indent + "    }\n\n",
+                toUpperFirstChar(propertyName),
+                fieldLength,
+                toUpperFirstChar(propertyName),
+                formatPropertyName(propertyName)
+        ));
+
+        sb.append(String.format(
+                        indent + "    public %s put%sEx(final String value)\n" +
+                        indent + "    {\n" +
+                        indent + "        try {\n" +
+                        indent + "            byte[] valueBytes = value.getBytes(%sCharacterEncoding());\n" +
+                        indent + "            return put%sEx(valueBytes, 0, value.length());\n" +
+                        indent + "        } catch (final java.io.UnsupportedEncodingException ex) {\n" +
+                        indent + "            throw new RuntimeException(ex);\n" +
+                        indent + "        }\n" +
+                        indent + "    }\n\n",
+                containingClassName,
+                toUpperFirstChar(propertyName),
+                formatPropertyName(propertyName),
+                toUpperFirstChar(propertyName)
+
+        ));
+
+        sb.append(String.format(
+                indent + "    public %s put%sEx(final byte[] src, final int srcOffset, final int length)\n" +
+                        indent + "    {\n" +
+                        indent + "        final int width = %d;\n" +
+                        indent + "        final int sizeOfLengthField = 1;\n" +
+                        indent + "        final int varLength = sizeOfLengthField + length;\n" +
+                        indent + "        if (srcOffset < 0 || srcOffset > (src.length - length))\n" +
+                        indent + "        {\n" +
+                        indent + "            throw new IndexOutOfBoundsException(" +
+                        indent + "                \"srcOffset out of range for copy: offset=\" + srcOffset);\n" +
+                        indent + "        }\n\n" +
+                        indent + "        if (varLength > width)\n" +
+                        indent + "        {\n" +
+                        indent + "            throw new IndexOutOfBoundsException(" +
+                        indent + "                \"length is greater than max width: totalSize=\" + varLength);\n" +
+                        indent + "        }\n\n" +
+                        indent + "        CodecUtil.uint8Put(buffer, this.offset + %d, (short) length);\n" +
+                        indent + "        CodecUtil.charsPut(buffer, this.offset + %d + sizeOfLengthField, " +
+                                          "src, srcOffset, length);\n" +
+                        indent + "        return this;\n" +
+                        indent + "    }\n",
+                containingClassName,
+                toUpperFirstChar(propertyName),
+                fieldLength,
+                offset,
+                offset
+        ));
     }
 
     private void generateCharacterEncodingMethod(
