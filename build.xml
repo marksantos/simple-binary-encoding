@@ -46,7 +46,7 @@
 
     <property name="dir.reports.checkstyle" location="target/reports/checkstyle"/>
     <property name="checkstyle.lib" location="test/lib/checkstyle-5.6-all.jar"/>
-    <property name="checkstyle.config.file" location="test/conf/checkstyle.xml"/>
+    <property name="checkstyle.config.file" location="config/checkstyle.xml"/>
     <property name="checkstyle.output.file" location="${dir.reports.checkstyle}/results.xml"/>
 
     <property name="dir.docs.java" value="target/docs/java"/>
@@ -380,12 +380,17 @@
         <attribute name="outputproperty" default=""/>
         <attribute name="resultproperty" default=""/>
         <attribute name="failonerror" default="true"/>
+        <attribute name="silent" default="false"/>
         <element name="args" implicit="yes" />
         <sequential>
+            <local name="shouldLog"/>
+            <condition property="shouldLog" value="true">
+                <isfalse value="@{silent}"/>
+            </condition>
             <echo taskname="adb" message="Running @{command}: @{description}"/>
             <exec taskname="adb" executable="${adb.exe}" failonerror="@{failonerror}"
                 resultproperty="@{resultproperty}">
-                <redirector outputproperty="@{outputproperty}" alwayslog="true"/>
+                <redirector outputproperty="@{outputproperty}" alwayslog="${shouldLog}"/>
                 <arg value="@{command}"/>
                 <args/>
             </exec>
@@ -427,6 +432,7 @@
             <dex src="${dir.test.lib}/android/dexmaker-1.1.jar" destfile="${dir.test.android.dexedLibs}/dexmaker-1.1-dexed.jar"/>
             <dex src="${dir.test.lib}/android/dexmaker-mockito-1.1.jar" destfile="${dir.test.android.dexedLibs}/dexmaker-mockito-1.1-dexed.jar"/>
             <dex src="${dir.test.lib}/objenesis-2.1.jar" destfile="${dir.test.android.dexedLibs}/objenesis-2.1-dexed.jar"/>
+            <dex src="${dir.test.lib}/gson-2.3.1.jar" destfile="${dir.test.android.dexedLibs}/gson-2.3.1-dexed.jar"/>
             <dex src="${dir.test.android.build}" destfile="${dir.test.android.dexedLibs}/sbe-test-dexed.jar"/>
             <dex src="${dir.main.android.build}" destfile="${dir.test.android.dexedLibs}/sbe-main-dexed.jar"/>
             <dex src="${dir.test.android.dexedLibs}" destfile="${dir.test.android.testpackage}/classes.dex"/>
@@ -480,8 +486,10 @@
             <property name="test-results"
                 value="/data/data/uk.co.real_logic.sbe.android.test/files/test-results.xml"
                 unless:true="${FILE_ON_EXTERNAL_STORAGE}"/>
-            <adb command="shell">
-                <arg line="run-as ${project.app.package} chmod 644 ${test-results}"/>
+            <!-- ignoring the output, this migth fail on non-rooted devices -->
+            <!-- but if removed, we won't be able to get the file for rooted devices :) -->
+            <adb command="shell" description="chmod 644 ${test-results}">
+                <arg line="run-as ${project.app.package} chmod 644 ${test-results} >/dev/null 2>&amp;1 &amp;&amp; echo true (device might be rooted) || echo failed (device is not rooted)"/>
             </adb>
             <adb command="pull" description="Pulling the test results from: ${test-results}">
                 <arg value="${test-results}"/>
@@ -893,7 +901,7 @@
             <fileset dir="${dir.test.cpp.src}" includes="**/*Test.cpp"/>
             <syslibset libs="pthread, stdc++"/>
         </cc>
-        <exec executable="${exec.test.cpp}" failonerror="true">
+        <exec executable="${exec.test.cpp}" failonerror="true" dir="${dir.exec.test.cpp}">
             <arg value="--gtest_color=no"/>
         </exec>
     </target>

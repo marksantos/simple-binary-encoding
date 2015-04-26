@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.co.real_logic.sbe.generation;
+package uk.co.real_logic.sbe.codec.java;
 
-import java.io.IOException;
-import java.io.Writer;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Abstraction that manages the destination of generated output.
+ * Group order for repeating groups in encoded messages.
  */
-public interface OutputManager
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+public @interface GroupOrder
 {
-    /**
-     * Create a new output destination based on a name. The user is responsible for calling
-     * {@link java.io.Writer#close()}.
-     *
-     * @param name of the given output.
-     * @return A {@link Writer} to which the code generation should be output.
-     * @throws IOException if an error occurs during output.
-     */
-    Writer createOutput(String name) throws IOException;
+    Class<?>[] value();
 }

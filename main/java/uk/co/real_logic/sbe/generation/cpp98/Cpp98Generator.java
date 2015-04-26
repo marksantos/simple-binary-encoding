@@ -17,12 +17,12 @@ package uk.co.real_logic.sbe.generation.cpp98;
 
 import uk.co.real_logic.sbe.PrimitiveType;
 import uk.co.real_logic.sbe.generation.CodeGenerator;
-import uk.co.real_logic.sbe.generation.OutputManager;
+import uk.co.real_logic.agrona.generation.OutputManager;
 import uk.co.real_logic.sbe.ir.Encoding;
 import uk.co.real_logic.sbe.ir.Ir;
 import uk.co.real_logic.sbe.ir.Signal;
 import uk.co.real_logic.sbe.ir.Token;
-import uk.co.real_logic.sbe.util.Verify;
+import uk.co.real_logic.agrona.Verify;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -116,7 +116,7 @@ public class Cpp98Generator implements CodeGenerator
 
                 final List<Token> groups = new ArrayList<>();
                 offset = collectGroups(messageBody, offset, groups);
-                StringBuilder sb = new StringBuilder();
+                final StringBuilder sb = new StringBuilder();
                 generateGroups(sb, groups, 0, BASE_INDENT);
                 out.append(sb);
 
@@ -194,7 +194,7 @@ public class Cpp98Generator implements CodeGenerator
         final StringBuilder sb, final String groupName, final List<Token> tokens, final int index, final String indent)
     {
         final String dimensionsClassName = formatClassName(tokens.get(index + 1).name());
-        final Integer dimensionHeaderSize = Integer.valueOf(tokens.get(index + 1).size());
+        final int dimensionHeaderSize = tokens.get(index + 1).size();
 
         sb.append(String.format(
             "\n" +
@@ -231,7 +231,7 @@ public class Cpp98Generator implements CodeGenerator
             dimensionHeaderSize
         ));
 
-        final Integer blockLength = Integer.valueOf(tokens.get(index).size());
+        final int blockLength = tokens.get(index).size();
         final String cpp98TypeForBlockLength = cpp98TypeName(tokens.get(index + 2).encoding().primitiveType());
         final String cpp98TypeForNumInGroup = cpp98TypeName(tokens.get(index + 3).encoding().primitiveType());
 
@@ -287,7 +287,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        offset_ = *positionPtr_;\n" +
             indent + "        if (SBE_BOUNDS_CHECK_EXPECT(( (offset_ + blockLength_) > bufferLength_ ),0))\n" +
             indent + "        {\n" +
-            indent + "            throw \"buffer too short to support next group index\";\n" +
+            indent + "            throw std::runtime_error(\"buffer too short to support next group index [E108]\");\n" +
             indent + "        }\n" +
             indent + "        *positionPtr_ = offset_ + blockLength_;\n" +
             indent + "        ++index_;\n\n" +
@@ -320,7 +320,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        return %2$d;\n" +
             indent + "    }\n\n",
             groupName,
-            Long.valueOf(token.id())
+            (long)token.id()
         ));
 
         sb.append(String.format(
@@ -360,7 +360,7 @@ public class Cpp98Generator implements CodeGenerator
                 final String propertyName = toUpperFirstChar(token.name());
                 final String characterEncoding = tokens.get(i + 3).encoding().characterEncoding();
                 final Token lengthToken = tokens.get(i + 2);
-                final Integer sizeOfLengthField = Integer.valueOf(lengthToken.size());
+                final int sizeOfLengthField = lengthToken.size();
                 final String lengthCpp98Type = cpp98TypeName(lengthToken.encoding().primitiveType());
 
                 generateFieldMetaAttributeMethod(sb, token, BASE_INDENT);
@@ -459,8 +459,8 @@ public class Cpp98Generator implements CodeGenerator
             "        return %3$d;\n" +
             "    }\n\n",
             formatPropertyName(propertyName),
-            Long.valueOf(token.version()),
-            Integer.valueOf(token.id())
+            (long)token.version(),
+            token.id()
         ));
 
         sb.append(String.format(
@@ -560,7 +560,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        {\n" +
             indent + "            return false;\n" +
             indent + "        }\n\n",
-            Integer.valueOf(sinceVersion)
+            sinceVersion
         );
     }
 
@@ -665,7 +665,7 @@ public class Cpp98Generator implements CodeGenerator
         sb.append(String.format(
             "            case %1$s: return NULL_VALUE;\n" +
             "        }\n\n" +
-            "        throw \"unknown value for enum %2$s\";\n" +
+            "        throw std::runtime_error(\"unknown value for enum %2$s [E103]\");\n" +
             "    }\n",
             encodingToken.encoding().applicableNullValue().toString(),
             enumName
@@ -686,7 +686,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        {\n" +
             indent + "            return %2$s;\n" +
             indent + "        }\n\n",
-            Integer.valueOf(sinceVersion),
+            sinceVersion,
             generateLiteral(encoding.primitiveType(), encoding.applicableNullValue().toString())
         );
     }
@@ -703,7 +703,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        {\n" +
             indent + "            return 0;\n" +
             indent + "        }\n\n",
-            Integer.valueOf(sinceVersion)
+            sinceVersion
         );
     }
 
@@ -719,7 +719,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        {\n" +
             indent + "            return NULL;\n" +
             indent + "        }\n\n",
-            Integer.valueOf(sinceVersion)
+            sinceVersion
         );
     }
 
@@ -841,8 +841,10 @@ public class Cpp98Generator implements CodeGenerator
     {
         final StringBuilder sb = new StringBuilder();
 
-        final PrimitiveType primitiveType = token.encoding().primitiveType();
+        final Encoding encoding = token.encoding();
+        final PrimitiveType primitiveType = encoding.primitiveType();
         final String cpp98TypeName = cpp98TypeName(primitiveType);
+        final CharSequence nullValueString = generateNullValueLiteral(primitiveType, encoding);
 
         sb.append(String.format(
             "\n" +
@@ -852,7 +854,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "    }\n",
             cpp98TypeName,
             propertyName,
-            generateLiteral(primitiveType, token.encoding().applicableNullValue().toString())
+            nullValueString
         ));
 
         sb.append(String.format(
@@ -884,8 +886,7 @@ public class Cpp98Generator implements CodeGenerator
         final String containingClassName, final String propertyName, final Token token, final String indent)
     {
         final String cpp98TypeName = cpp98TypeName(token.encoding().primitiveType());
-        final Integer offset = Integer.valueOf(token.offset());
-
+        final int offset = token.offset();
         final StringBuilder sb = new StringBuilder();
 
         sb.append(String.format(
@@ -922,7 +923,7 @@ public class Cpp98Generator implements CodeGenerator
         final String containingClassName, final String propertyName, final Token token, final String indent)
     {
         final String cpp98TypeName = cpp98TypeName(token.encoding().primitiveType());
-        final Integer offset = Integer.valueOf(token.offset());
+        final int offset = token.offset();
 
         final StringBuilder sb = new StringBuilder();
 
@@ -933,7 +934,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        return %2$d;\n" +
             indent + "    }\n\n",
             propertyName,
-            Integer.valueOf(token.arrayLength())
+            token.arrayLength()
         ));
 
         sb.append(String.format(
@@ -952,18 +953,18 @@ public class Cpp98Generator implements CodeGenerator
             indent + "    {\n" +
             indent + "        if (index < 0 || index >= %3$d)\n" +
             indent + "        {\n" +
-            indent + "            throw \"index out of range for %2$s\";\n" +
+            indent + "            throw std::runtime_error(\"index out of range for %2$s [E104]\");\n" +
             indent + "        }\n\n" +
                              "%4$s" +
             indent + "        return %5$s(*((%1$s *)(buffer_ + offset_ + %6$d + (index * %7$d))));\n" +
             indent + "    }\n\n",
             cpp98TypeName,
             propertyName,
-            Integer.valueOf(token.arrayLength()),
+            token.arrayLength(),
             generateFieldNotPresentCondition(token.version(), token.encoding(), indent),
             formatByteOrderEncoding(token.encoding().byteOrder(), token.encoding().primitiveType()),
             offset,
-            Integer.valueOf(token.encoding().primitiveType().size())
+            token.encoding().primitiveType().size()
         ));
 
         sb.append(String.format(
@@ -971,15 +972,15 @@ public class Cpp98Generator implements CodeGenerator
             indent + "    {\n" +
             indent + "        if (index < 0 || index >= %3$d)\n" +
             indent + "        {\n" +
-            indent + "            throw \"index out of range for %1$s\";\n" +
+            indent + "            throw std::runtime_error(\"index out of range for %1$s [E105]\");\n" +
             indent + "        }\n\n" +
             indent + "        *((%2$s *)(buffer_ + offset_ + %4$d + (index * %5$d))) = %6$s(value);\n" +
             indent + "    }\n\n",
             propertyName,
             cpp98TypeName,
-            Integer.valueOf(token.arrayLength()),
+            token.arrayLength(),
             offset,
-            Integer.valueOf(token.encoding().primitiveType().size()),
+            token.encoding().primitiveType().size(),
             formatByteOrderEncoding(token.encoding().byteOrder(), token.encoding().primitiveType())
         ));
 
@@ -988,14 +989,14 @@ public class Cpp98Generator implements CodeGenerator
             indent + "    {\n" +
             indent + "        if (length > %2$d)\n" +
             indent + "        {\n" +
-            indent + "             throw \"length too large for get%1$s\";\n" +
+            indent + "             throw std::runtime_error(\"length too large for get%1$s [E106]\");\n" +
             indent + "        }\n\n" +
                              "%3$s" +
             indent + "        ::memcpy(dst, buffer_ + offset_ + %4$d, length);\n" +
             indent + "        return length;\n" +
             indent + "    }\n\n",
             toUpperFirstChar(propertyName),
-            Integer.valueOf(token.arrayLength()),
+            token.arrayLength(),
             generateArrayFieldNotPresentCondition(token.version(), indent),
             offset
         ));
@@ -1009,7 +1010,7 @@ public class Cpp98Generator implements CodeGenerator
             containingClassName,
             toUpperFirstChar(propertyName),
             offset,
-            Integer.valueOf(token.arrayLength())
+            token.arrayLength()
         ));
 
         return sb;
@@ -1053,7 +1054,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        return %2$d;\n" +
             indent + "    }\n\n",
             propertyName,
-            Integer.valueOf(constantValue.length)
+            constantValue.length
         ));
 
         sb.append(String.format(
@@ -1105,7 +1106,7 @@ public class Cpp98Generator implements CodeGenerator
             "    {\n" +
             "        if (SBE_BOUNDS_CHECK_EXPECT((offset > (bufferLength - %2$s)), 0))\n" +
             "        {\n" +
-            "            throw \"buffer too short for flyweight\";\n" +
+            "            throw std::runtime_error(\"buffer too short for flyweight [E107]\");\n" +
             "        }\n" +
             "        buffer_ = buffer;\n" +
             "        offset_ = offset;\n" +
@@ -1117,7 +1118,7 @@ public class Cpp98Generator implements CodeGenerator
             "        return %2$s;\n" +
             "    }\n\n",
             className,
-            Integer.valueOf(size)
+            size
         );
     }
 
@@ -1196,7 +1197,7 @@ public class Cpp98Generator implements CodeGenerator
             "    {\n" +
             "        if (SBE_BOUNDS_CHECK_EXPECT((position > bufferLength_), 0))\n" +
             "        {\n" +
-            "            throw \"buffer too short\";\n" +
+            "            throw std::runtime_error(\"buffer too short [E100]\");\n" +
             "        }\n" +
             "        position_ = position;\n" +
             "    }\n\n" +
@@ -1244,7 +1245,7 @@ public class Cpp98Generator implements CodeGenerator
                     indent + "        return %2$d;\n" +
                     indent + "    }\n\n",
                     propertyName,
-                    Integer.valueOf(signalToken.id())
+                    signalToken.id()
                 ));
 
                 sb.append(String.format(
@@ -1257,7 +1258,7 @@ public class Cpp98Generator implements CodeGenerator
                     indent + "        return (actingVersion_ >= %2$d) ? true : false;\n" +
                     indent + "    }\n\n",
                     propertyName,
-                    Long.valueOf(signalToken.version())
+                    (long)signalToken.version()
                 ));
 
                 generateFieldMetaAttributeMethod(sb, signalToken, indent);
@@ -1324,7 +1325,7 @@ public class Cpp98Generator implements CodeGenerator
             indent + "        {\n" +
             indent + "            return %2$s::NULL_VALUE;\n" +
             indent + "        }\n\n",
-            Integer.valueOf(sinceVersion),
+            sinceVersion,
             enumName
         );
     }
@@ -1334,7 +1335,7 @@ public class Cpp98Generator implements CodeGenerator
     {
         final String enumName = token.name();
         final String typeName = cpp98TypeName(token.encoding().primitiveType());
-        final Integer offset = Integer.valueOf(token.offset());
+        final int offset = token.offset();
 
         final StringBuilder sb = new StringBuilder();
 
@@ -1375,7 +1376,7 @@ public class Cpp98Generator implements CodeGenerator
         final StringBuilder sb = new StringBuilder();
 
         final String bitsetName = formatClassName(token.name());
-        final Integer offset = Integer.valueOf(token.offset());
+        final int offset = token.offset();
 
         sb.append(String.format(
             "\n" +
@@ -1404,7 +1405,7 @@ public class Cpp98Generator implements CodeGenerator
     private Object generateCompositeProperty(final String propertyName, final Token token, final String indent)
     {
         final String compositeName = formatClassName(token.name());
-        final Integer offset = Integer.valueOf(token.offset());
+        final int offset = token.offset();
 
         final StringBuilder sb = new StringBuilder();
 
@@ -1430,6 +1431,40 @@ public class Cpp98Generator implements CodeGenerator
         ));
 
         return sb;
+    }
+
+    private CharSequence generateNullValueLiteral(final PrimitiveType primitiveType, final Encoding encoding)
+    {
+        // Visual C++ does not handle minimum integer values properly
+        // See: http://msdn.microsoft.com/en-us/library/4kh09110.aspx
+        // So some of the null values get special handling
+        if (null == encoding.nullValue())
+        {
+            switch (primitiveType)
+            {
+                case CHAR:
+                case FLOAT:
+                case DOUBLE:
+                    break; // no special handling
+                case INT8:
+                    return "SCHAR_MIN";
+                case INT16:
+                    return "SHRT_MIN";
+                case INT32:
+                    return "LONG_MIN";
+                case INT64:
+                    return "LLONG_MIN";
+                case UINT8:
+                    return "UCHAR_MAX";
+                case UINT16:
+                    return "USHRT_MAX";
+                case UINT32:
+                    return "ULONG_MAX";
+                case UINT64:
+                    return "ULLONG_MAX";
+            }
+        }
+        return generateLiteral(primitiveType, encoding.applicableNullValue().toString());
     }
 
     private CharSequence generateLiteral(final PrimitiveType type, final String value)
@@ -1480,6 +1515,7 @@ public class Cpp98Generator implements CodeGenerator
                 {
                     literal = value;
                 }
+                break;
         }
 
         return literal;

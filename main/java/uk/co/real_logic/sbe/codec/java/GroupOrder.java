@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.co.real_logic.sbe.generation.java.util;
+package uk.co.real_logic.sbe.codec.java;
 
-import javax.tools.SimpleJavaFileObject;
-import java.net.URI;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class CharSequenceJavaFileObject extends SimpleJavaFileObject
+/**
+ * Group order for repeating groups in encoded messages.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+public @interface GroupOrder
 {
-    private final CharSequence sourceCode;
-
-    public CharSequenceJavaFileObject(final String className, final CharSequence sourceCode)
-    {
-        super(URI.create("string:///" + className.replace('.', '/') + Kind.SOURCE.extension), Kind.SOURCE);
-        this.sourceCode = sourceCode;
-    }
-
-    public CharSequence getCharContent(boolean ignoreEncodingErrors)
-    {
-        return sourceCode;
-    }
+    Class<?>[] value();
 }

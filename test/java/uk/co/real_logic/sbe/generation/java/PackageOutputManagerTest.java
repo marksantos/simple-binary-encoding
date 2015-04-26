@@ -16,6 +16,7 @@
 package uk.co.real_logic.sbe.generation.java;
 
 import org.junit.Test;
+import uk.co.real_logic.agrona.generation.PackageOutputManager;
 
 import java.io.File;
 import java.io.Writer;
@@ -36,7 +37,7 @@ public class PackageOutputManagerTest
         final String exampleClassName = "ExampleClassName";
 
         final PackageOutputManager pom = new PackageOutputManager(tempDirName, packageName);
-        Writer out = pom.createOutput(exampleClassName);
+        final Writer out = pom.createOutput(exampleClassName);
         out.close();
 
         final String fullyQualifiedFilename =

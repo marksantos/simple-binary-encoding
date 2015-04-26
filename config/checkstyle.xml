@@ -17,6 +17,8 @@
 
         <module name="ConstantName"/>
 
+        <module name="FinalLocalVariable"/>
+
         <module name="LocalFinalVariableName"/>
 
         <module name="LocalVariableName"/>
@@ -58,6 +60,8 @@
         <module name="WhitespaceAfter">
             <property name="tokens" value="COMMA, SEMI"/>
         </module>
+
+        <module name="WhitespaceAround"/>
 
         <module name="OperatorWrap">
             <property name="tokens" value="PLUS, ASSIGN"/>
@@ -116,8 +120,6 @@
         </module>
 
         <module name="UpperEll"/>
-
-        <module name="JUnitTestCase"/>
 
         <module name="IllegalType">
             <property name="legalAbstractClassNames"

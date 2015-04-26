@@ -16,11 +16,11 @@
 
 #include <sbe/sbe.hpp>
 
-#include <uk_co_real_logic_sbe_ir_generated/VarDataEncoding.hpp>
 #include <uk_co_real_logic_sbe_ir_generated/ByteOrderCodec.hpp>
+#include <uk_co_real_logic_sbe_ir_generated/SignalCodec.hpp>
 #include <uk_co_real_logic_sbe_ir_generated/PresenceCodec.hpp>
 #include <uk_co_real_logic_sbe_ir_generated/PrimitiveTypeCodec.hpp>
-#include <uk_co_real_logic_sbe_ir_generated/SignalCodec.hpp>
+#include <uk_co_real_logic_sbe_ir_generated/VarDataEncoding.hpp>
 
 using namespace sbe;
 
@@ -107,7 +107,7 @@ public:
     {
         if (SBE_BOUNDS_CHECK_EXPECT((position > bufferLength_), 0))
         {
-            throw "buffer too short";
+            throw std::runtime_error("buffer too short [E100]");
         }
         position_ = position;
     }
@@ -157,7 +157,7 @@ public:
 
     static const sbe_int32_t tokenOffsetNullValue()
     {
-        return -2147483648;
+        return LONG_MIN;
     }
 
     static const sbe_int32_t tokenOffsetMinValue()
@@ -211,7 +211,7 @@ public:
 
     static const sbe_int32_t tokenSizeNullValue()
     {
-        return -2147483648;
+        return LONG_MIN;
     }
 
     static const sbe_int32_t tokenSizeMinValue()
@@ -265,7 +265,7 @@ public:
 
     static const sbe_int32_t fieldIdNullValue()
     {
-        return -2147483648;
+        return LONG_MIN;
     }
 
     static const sbe_int32_t fieldIdMinValue()
@@ -319,7 +319,7 @@ public:
 
     static const sbe_int32_t tokenVersionNullValue()
     {
-        return -2147483648;
+        return LONG_MIN;
     }
 
     static const sbe_int32_t tokenVersionMinValue()

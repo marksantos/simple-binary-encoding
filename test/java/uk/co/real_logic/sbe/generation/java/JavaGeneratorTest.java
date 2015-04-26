@@ -17,15 +17,17 @@ package uk.co.real_logic.sbe.generation.java;
 
 import org.junit.Before;
 import org.junit.Test;
+import uk.co.real_logic.agrona.MutableDirectBuffer;
+import uk.co.real_logic.agrona.concurrent.UnsafeBuffer;
+import uk.co.real_logic.agrona.generation.CompilerUtil;
+import uk.co.real_logic.agrona.generation.StringWriterOutputManager;
 import uk.co.real_logic.sbe.TestUtil;
-import uk.co.real_logic.sbe.codec.java.DirectBuffer;
-import uk.co.real_logic.sbe.generation.java.util.CompilerUtil;
-import uk.co.real_logic.sbe.generation.java.util.StringWriterOutputManager;
 import uk.co.real_logic.sbe.ir.Ir;
 import uk.co.real_logic.sbe.xml.IrGenerator;
 import uk.co.real_logic.sbe.xml.MessageSchema;
 import uk.co.real_logic.sbe.xml.ParserOptions;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.ByteOrder;
 
@@ -39,9 +41,12 @@ import static uk.co.real_logic.sbe.xml.XmlSchemaParser.parse;
 
 public class JavaGeneratorTest
 {
+    private static final Class<?> BUFFER_IMPLEMENTATION = MutableDirectBuffer.class;
+    private static final String BUFFER_IMPLEMENTATION_NAME = BUFFER_IMPLEMENTATION.getName();
     private static final ByteOrder BYTE_ORDER = ByteOrder.nativeOrder();
+
     private final StringWriterOutputManager outputManager = new StringWriterOutputManager();
-    private final DirectBuffer mockBuffer = mock(DirectBuffer.class);
+    private final MutableDirectBuffer mockBuffer = mock(MutableDirectBuffer.class);
 
     private Ir ir;
 
@@ -62,29 +67,29 @@ public class JavaGeneratorTest
     {
         final int bufferOffset = 64;
         final int templateIdOffset = 2;
-        final Short templateId = Short.valueOf((short)7);
+        final short templateId = (short)7;
         final int actingVersion = 0;
-        final Integer blockLength = Integer.valueOf(32);
+        final int blockLength = 32;
         final String fqClassName = ir.applicableNamespace() + "." + MESSAGE_HEADER_TYPE;
 
-        when(Short.valueOf(mockBuffer.getShort(bufferOffset + templateIdOffset, BYTE_ORDER))).thenReturn(templateId);
+        when(mockBuffer.getShort(bufferOffset + templateIdOffset, BYTE_ORDER)).thenReturn(templateId);
 
-        final JavaGenerator javaGenerator = new JavaGenerator(ir, outputManager);
+        final JavaGenerator javaGenerator = new JavaGenerator(ir, BUFFER_IMPLEMENTATION_NAME, outputManager);
         javaGenerator.generateMessageHeaderStub();
 
         final Class<?> clazz = CompilerUtil.compileInMemory(fqClassName, outputManager.getSources());
         assertNotNull(clazz);
 
         final Object flyweight = clazz.newInstance();
-        final Method method = flyweight.getClass().getDeclaredMethod("wrap", DirectBuffer.class, int.class, int.class);
-        method.invoke(flyweight, mockBuffer, Integer.valueOf(bufferOffset), Integer.valueOf(actingVersion));
+        final Method method = flyweight.getClass().getDeclaredMethod("wrap", BUFFER_IMPLEMENTATION, int.class, int.class);
+        method.invoke(flyweight, mockBuffer, bufferOffset, actingVersion);
 
         final Integer result = (Integer)clazz.getDeclaredMethod("templateId").invoke(flyweight);
-        assertThat(result, is(Integer.valueOf(templateId.intValue())));
+        assertThat(result, is((int)templateId));
 
         clazz.getDeclaredMethod("blockLength", int.class).invoke(flyweight, blockLength);
 
-        verify(mockBuffer).putShort(bufferOffset, blockLength.shortValue(), BYTE_ORDER);
+        verify(mockBuffer).putShort(bufferOffset, (short)blockLength, BYTE_ORDER);
     }
 
     @Test
@@ -93,13 +98,13 @@ public class JavaGeneratorTest
         final String className = "BooleanType";
         final String fqClassName = ir.applicableNamespace() + "." + className;
 
-        final JavaGenerator javaGenerator = new JavaGenerator(ir, outputManager);
+        final JavaGenerator javaGenerator = new JavaGenerator(ir, BUFFER_IMPLEMENTATION_NAME, outputManager);
         javaGenerator.generateTypeStubs();
 
         final Class<?> clazz = CompilerUtil.compileInMemory(fqClassName, outputManager.getSources());
         assertNotNull(clazz);
 
-        final Object result = clazz.getDeclaredMethod("get", short.class).invoke(null, Short.valueOf((short)1));
+        final Object result = clazz.getDeclaredMethod("get", short.class).invoke(null, (short)1);
 
         assertThat(result.toString(), is("TRUE"));
     }
@@ -110,13 +115,13 @@ public class JavaGeneratorTest
         final String className = "Model";
         final String fqClassName = ir.applicableNamespace() + "." + className;
 
-        final JavaGenerator javaGenerator = new JavaGenerator(ir, outputManager);
+        final JavaGenerator javaGenerator = new JavaGenerator(ir, BUFFER_IMPLEMENTATION_NAME, outputManager);
         javaGenerator.generateTypeStubs();
 
         final Class<?> clazz = CompilerUtil.compileInMemory(fqClassName, outputManager.getSources());
         assertNotNull(clazz);
 
-        final Object result = clazz.getDeclaredMethod("get", byte.class).invoke(null, Byte.valueOf((byte)'B'));
+        final Object result = clazz.getDeclaredMethod("get", byte.class).invoke(null, (byte)'B');
 
         assertThat(result.toString(), is("B"));
     }
@@ -126,21 +131,21 @@ public class JavaGeneratorTest
     {
         final int bufferOffset = 8;
         final int actingVersion = 0;
-        final Byte bitset = Byte.valueOf((byte)0b0000_0100);
+        final byte bitset = (byte)0b0000_0100;
         final String className = "OptionalExtras";
         final String fqClassName = ir.applicableNamespace() + "." + className;
 
-        when(Byte.valueOf(mockBuffer.getByte(bufferOffset))).thenReturn(bitset);
+        when(mockBuffer.getByte(bufferOffset)).thenReturn(bitset);
 
-        final JavaGenerator javaGenerator = new JavaGenerator(ir, outputManager);
+        final JavaGenerator javaGenerator = new JavaGenerator(ir, BUFFER_IMPLEMENTATION_NAME, outputManager);
         javaGenerator.generateTypeStubs();
 
         final Class<?> clazz = CompilerUtil.compileInMemory(fqClassName, outputManager.getSources());
         assertNotNull(clazz);
 
         final Object flyweight = clazz.newInstance();
-        final Method method = flyweight.getClass().getDeclaredMethod("wrap", DirectBuffer.class, int.class, int.class);
-        method.invoke(flyweight, mockBuffer, Integer.valueOf(bufferOffset), Integer.valueOf(actingVersion));
+        final Method method = flyweight.getClass().getDeclaredMethod("wrap", BUFFER_IMPLEMENTATION, int.class, int.class);
+        method.invoke(flyweight, mockBuffer, bufferOffset, actingVersion);
 
         final Object result = clazz.getDeclaredMethod("cruiseControl").invoke(flyweight);
 
@@ -161,30 +166,30 @@ public class JavaGeneratorTest
         final String className = "Engine";
         final String fqClassName = ir.applicableNamespace() + "." + className;
 
-        when(Short.valueOf(mockBuffer.getShort(capacityFieldOffset, BYTE_ORDER)))
-            .thenReturn(Short.valueOf((short)expectedEngineCapacity));
+        when(mockBuffer.getShort(capacityFieldOffset, BYTE_ORDER))
+            .thenReturn((short)expectedEngineCapacity);
 
-        final JavaGenerator javaGenerator = new JavaGenerator(ir, outputManager);
+        final JavaGenerator javaGenerator = new JavaGenerator(ir, BUFFER_IMPLEMENTATION_NAME, outputManager);
         javaGenerator.generateTypeStubs();
 
         final Class<?> clazz = CompilerUtil.compileInMemory(fqClassName, outputManager.getSources());
         assertNotNull(clazz);
 
         final Object flyweight = clazz.newInstance();
-        final Method method = flyweight.getClass().getDeclaredMethod("wrap", DirectBuffer.class, int.class, int.class);
-        method.invoke(flyweight, mockBuffer, Integer.valueOf(bufferOffset), Integer.valueOf(actingVersion));
+        final Method method = flyweight.getClass().getDeclaredMethod("wrap", BUFFER_IMPLEMENTATION, int.class, int.class);
+        method.invoke(flyweight, mockBuffer, bufferOffset, actingVersion);
 
-        final Integer capacityResult = (Integer)clazz.getDeclaredMethod("capacity").invoke(flyweight);
-        assertThat(capacityResult, is(Integer.valueOf(expectedEngineCapacity)));
+        final int capacityResult = (Integer)clazz.getDeclaredMethod("capacity").invoke(flyweight);
+        assertThat(capacityResult, is(expectedEngineCapacity));
 
-        final Integer maxRpmResult = (Integer)clazz.getDeclaredMethod("maxRpm").invoke(flyweight);
-        assertThat(maxRpmResult, is(Integer.valueOf(expectedMaxRpm)));
+        final int maxRpmResult = (Integer)clazz.getDeclaredMethod("maxRpm").invoke(flyweight);
+        assertThat(maxRpmResult, is(expectedMaxRpm));
 
         final short numCylinders = (short)4;
-        clazz.getDeclaredMethod("numCylinders", short.class).invoke(flyweight, Short.valueOf(numCylinders));
+        clazz.getDeclaredMethod("numCylinders", short.class).invoke(flyweight, numCylinders);
 
         clazz.getDeclaredMethod("putManufacturerCode", byte[].class, int.class)
-             .invoke(flyweight, manufacturerCode, Integer.valueOf(0));
+            .invoke(flyweight, manufacturerCode, 0);
 
         verify(mockBuffer).putByte(numCylindersOffset, (byte)numCylinders);
         verify(mockBuffer).putBytes(manufacturerCodeOffset, manufacturerCode, 0, manufacturerCode.length);
@@ -193,19 +198,20 @@ public class JavaGeneratorTest
     @Test
     public void shouldGenerateBasicMessage() throws Exception
     {
-        final DirectBuffer buffer = new DirectBuffer(new byte[4096]);
+        final UnsafeBuffer buffer = new UnsafeBuffer(new byte[4096]);
         final String className = "Car";
         final String fqClassName = ir.applicableNamespace() + "." + className;
 
-        final JavaGenerator javaGenerator = new JavaGenerator(ir, outputManager);
+        final JavaGenerator javaGenerator = new JavaGenerator(ir, BUFFER_IMPLEMENTATION_NAME, outputManager);
         javaGenerator.generate();
 
         final Class<?> clazz = CompilerUtil.compileInMemory(fqClassName, outputManager.getSources());
         assertNotNull(clazz);
 
         final Object msgFlyweight = clazz.newInstance();
-        msgFlyweight.getClass().getDeclaredMethod("wrapForEncode", DirectBuffer.class, int.class)
-                               .invoke(msgFlyweight, buffer, Integer.valueOf(0));
+        msgFlyweight.getClass()
+            .getDeclaredMethod("wrapForEncode", BUFFER_IMPLEMENTATION, int.class)
+            .invoke(msgFlyweight, buffer, 0);
 
         final Integer initialPosition = (Integer)msgFlyweight.getClass().getDeclaredMethod("limit").invoke(msgFlyweight);
 
@@ -214,6 +220,18 @@ public class JavaGeneratorTest
             (Integer)msgFlyweight.getClass().getDeclaredMethod("limit").invoke(msgFlyweight), greaterThan(initialPosition));
 
         final Integer count = (Integer)groupFlyweight.getClass().getDeclaredMethod("count").invoke(groupFlyweight);
-        assertThat(count, is(Integer.valueOf(0)));
+        assertThat(count, is(0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldValidateMissingBufferClass() throws IOException
+    {
+        new JavaGenerator(ir, "dasdsads", outputManager);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldValidateNotImplementedBufferClass() throws IOException
+    {
+        new JavaGenerator(ir, "java.nio.ByteBuffer", outputManager);
     }
 }
