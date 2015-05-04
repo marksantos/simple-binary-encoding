@@ -16,6 +16,8 @@
  */
 package uk.co.real_logic.sbe;
 
+import uk.co.real_logic.agrona.DirectBuffer;
+import uk.co.real_logic.agrona.MutableDirectBuffer;
 import uk.co.real_logic.sbe.generation.CodeGenerator;
 import uk.co.real_logic.sbe.generation.TargetCodeGenerator;
 import uk.co.real_logic.sbe.ir.Ir;
@@ -100,9 +102,24 @@ public class SbeTool
     public static final String TARGET_NAMESPACE = "sbe.target.namespace";
 
     /**
-     * Specifies the name of the Java buffer to wrap
+     * Specifies the name of the Java mutable buffer to wrap
      */
-    public static final String JAVA_BUFFER = "sbe.java.buffer";
+    public static final String JAVA_MUTABLE_BUFFER = "sbe.java.mutable.buffer";
+
+    /**
+     * Specifies the name of the Java read only buffer to wrap
+     */
+    public static final String JAVA_READ_ONLY_BUFFER = "sbe.java.readonly.buffer";
+
+    /**
+     * Default class to use as the buffer mutable implementation in generated code.
+     */
+    public static final String JAVA_DEFAULT_MUTABLE_BUFFER = MutableDirectBuffer.class.getName();
+
+    /**
+     * Default class to use as the buffer read only implementation in generated code.
+     */
+    public static final String JAVA_DEFAULT_READ_ONLY_BUFFER = DirectBuffer.class.getName();
 
     /**
      * Main entry point for the SBE Tool.

@@ -38,11 +38,18 @@ import static junit.framework.TestCase.assertEquals;
 public class JsonPrinterTest
 {
     private static final MessageHeader MESSAGE_HEADER = new MessageHeader();
+<<<<<<< .merge_file_a75984
     private static final Car CAR = new Car();
     private static final int ACTING_VERSION = 0;
     private static final int MSG_BUFFER_CAPACITY = 4 * 1024;
     private static final int SCHEMA_BUFFER_CAPACITY = 16 * 1024;
     private static final String ENCODING_FILENAME = "sbe.encoding.filename";
+=======
+    private static final CarEncoder CAR = new CarEncoder();
+    private static final int ACTING_VERSION = 0;
+    private static final int MSG_BUFFER_CAPACITY = 4 * 1024;
+    private static final int SCHEMA_BUFFER_CAPACITY = 16 * 1024;
+>>>>>>> .merge_file_a09964
 
     private static byte[] vehicleCode;
     private static byte[] manufacturerCode;
@@ -54,10 +61,17 @@ public class JsonPrinterTest
     {
         try
         {
+<<<<<<< .merge_file_a75984
             vehicleCode = "abcdef".getBytes(Car.vehicleCodeCharacterEncoding());
             manufacturerCode = "123".getBytes(Engine.manufacturerCodeCharacterEncoding());
             make = "Honda".getBytes(Car.makeCharacterEncoding());
             model = "Civic VTi".getBytes(Car.modelCharacterEncoding());
+=======
+            vehicleCode = "abcdef".getBytes(CarEncoder.vehicleCodeCharacterEncoding());
+            manufacturerCode = "123".getBytes(EngineEncoder.manufacturerCodeCharacterEncoding());
+            make = "Honda".getBytes(CarEncoder.makeCharacterEncoding());
+            model = "Civic VTi".getBytes(CarEncoder.modelCharacterEncoding());
+>>>>>>> .merge_file_a09964
         }
         catch (final UnsupportedEncodingException ex)
         {
@@ -137,7 +151,12 @@ public class JsonPrinterTest
         "        }]\n" +
         "    }],\n" +
         "    \"make\": \"Honda\",\n" +
+<<<<<<< .merge_file_a75984
         "    \"model\": \"Civic VTi\"\n" +
+=======
+        "    \"model\": \"Civic VTi\",\n" +
+        "    \"activationCode\": \"\"\n" +
+>>>>>>> .merge_file_a09964
         "}"
         , result);
     }
@@ -171,14 +190,22 @@ public class JsonPrinterTest
 
         final int srcOffset = 0;
 
+<<<<<<< .merge_file_a75984
         CAR.wrapForEncode(directBuffer, bufferOffset)
+=======
+        CAR.wrap(directBuffer, bufferOffset)
+>>>>>>> .merge_file_a09964
            .serialNumber(1234)
            .modelYear(2013)
            .available(BooleanType.TRUE)
            .code(Model.A)
            .putVehicleCode(vehicleCode, srcOffset);
 
+<<<<<<< .merge_file_a75984
         for (int i = 0, size = Car.someNumbersLength(); i < size; i++)
+=======
+        for (int i = 0, size = CarEncoder.someNumbersLength(); i < size; i++)
+>>>>>>> .merge_file_a09964
         {
             CAR.someNumbers(i, i);
         }
@@ -199,7 +226,11 @@ public class JsonPrinterTest
            .next().speed(55).mpg(49.0f)
            .next().speed(75).mpg(40.0f);
 
+<<<<<<< .merge_file_a75984
         final Car.PerformanceFigures perfFigures = CAR.performanceFiguresCount(2);
+=======
+        final CarEncoder.PerformanceFiguresEncoder perfFigures = CAR.performanceFiguresCount(2);
+>>>>>>> .merge_file_a09964
         perfFigures.next()
                    .octaneRating((short)95)
                    .accelerationCount(3)
