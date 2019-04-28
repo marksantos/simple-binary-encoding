@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45</TargetFrameworks>
+    <RootNamespace>Org.SbeTool.Sbe.Generated</RootNamespace>
+    <AssemblyName>Org.SbeTool.Sbe.Generated</AssemblyName>
+    <Copyright>Copyright (C) Bill Segall 2018, MarketFactory Inc 2017, Adaptive 2014. All rights reserved.</Copyright>
+    <Description />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\sbe-dll\sbe-dll.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="issue560\" />
+  </ItemGroup>
+  
+</Project>

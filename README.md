@@ -1,17 +1,136 @@
 Simple Binary Encoding (SBE)
 ============================
 
-[SBE](http://www.fixtradingcommunity.org/pg/file/fplpo/read/1196757/simple-binary-encoding-release-candidate-2) is OSI layer 6 presentation for encoding and decoding application messages in binary format for low-latency applications.
+[![Javadocs](https://www.javadoc.io/badge/uk.co.real-logic/sbe-tool.svg)](https://www.javadoc.io/doc/uk.co.real-logic/sbe-tool)
+[![Build Status](https://travis-ci.org/real-logic/simple-binary-encoding.svg?branch=master)](https://travis-ci.org/real-logic/simple-binary-encoding)
+[![GitHub](https://img.shields.io/github/license/real-logic/simple-binary-encoding.svg)](https://github.com/real-logic/simple-binary-encoding/blob/master/LICENSE)
+[![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/real-logic/simple-binary-encoding.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/real-logic/simple-binary-encoding/context:java)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/real-logic/simple-binary-encoding.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/real-logic/simple-binary-encoding/alerts)
 
-Further details on the background and usage of SBE can be found on the [Wiki](https://github.com/real-logic/simple-binary-encoding/wiki).
+[SBE](https://github.com/FIXTradingCommunity/fix-simple-binary-encoding) is an OSI layer 6 presentation for 
+encoding and decoding binary application messages for low-latency financial applications. This repository contains 
+the reference implementations in Java, C++, Golang, and C#.
 
-Benchmark tools and information can be found [here](https://github.com/real-logic/simple-binary-encoding/tree/master/perf) and run from he root perf-build.xml file.
+Further details on the background and usage of SBE can be found on the
+[Wiki](https://github.com/real-logic/simple-binary-encoding/wiki).
 
-An XSD for SBE specs can be found [here](https://github.com/real-logic/simple-binary-encoding/blob/master/main/resources/fpl/SimpleBinary1-0.xsd)
+An XSD for SBE specs can be found
+[here](https://github.com/real-logic/simple-binary-encoding/blob/master/sbe-tool/src/main/resources/fpl/sbe.xsd). Please address questions about the specification to the [SBE FIX community](https://github.com/FIXTradingCommunity/fix-simple-binary-encoding).
+
+For the latest version information and changes see the [Change Log](https://github.com/real-logic/simple-binary-encoding/wiki/Change-Log) with **downloads** at [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Csbe). 
+
+The Java and C++ SBE implementations are designed with work very efficiently with the
+[Aeron](https://github.com/real-logic/aeron) messaging system for low-latency and
+high-throughput communications. The Java SBE implementation has a dependency on
+[Agrona](https://github.com/real-logic/agrona) for its buffer implementations.
+
+
+Binaries
+--------
+Binaries and dependency information for Maven, Ivy, Gradle, and others can be found at 
+[http://search.maven.org](http://search.maven.org/#search%7Cga%7C1%7Csbe).
+
+Example for Maven:
+
+```xml
+<dependency>
+    <groupId>uk.co.real-logic</groupId>
+    <artifactId>sbe-all</artifactId>
+    <version>1.12.4</version>
+</dependency>
+```
+
+Build
+-----
+
+The project is built with [Gradle](http://gradle.org/) using this [build.gradle](https://github.com/real-logic/simple-binary-encoding/blob/master/build.gradle) file.
+
+Full clean build:
+
+    $ ./gradlew
+
+Run the Java examples
+
+    $ ./gradlew runJavaExamples
+
+
+Distribution
+------------
+Jars for the executable, source, and javadoc for the various modules can be found in the following directories:
+
+    sbe-benchmarks/build/libs
+    sbe-samples/build/libs
+    sbe-tool/build/libs
+    sbe-all/build/libs
+
+An example to execute a Jar from command line using the 'all' jar which includes the Agrona dependency:
+
+    java -Dsbe.generate.ir=true -Dsbe.target.language=Cpp -Dsbe.target.namespace=sbe -Dsbe.output.dir=include/gen -Dsbe.errorLog=yes -jar sbe-all/build/libs/sbe-all-1.12.5-SNAPSHOT.jar my_sbe_input.xml
+
+
+C++ Build using CMake
+---------------------
+NOTE: Linux, Mac OS, and Windows only for the moment. See
+[FAQ](https://github.com/real-logic/simple-binary-encoding/wiki/Frequently-Asked-Questions).
+Windows builds have been tested with Visual Studio Express 12.
+
+For convenience, a script is provided that does a full clean, build, and test of all targets as a Release build.
+
+    $ ./cppbuild/cppbuild
+
+If you are comfortable with using CMake, then a full clean, build, and test looks like:
+
+    $ mkdir -p cppbuild/Debug
+    $ cd cppbuild/Debug
+    $ cmake ../..
+    $ cmake --build . --clean-first
+    $ ctest
+
+__Note__: A C generator is included with the C++ build. And is built with the C++ build. Currently, the C generator is a work
+in progress.
+
+Golang Build
+------------
+
+First build using Gradle to generate the SBE jar and then use it to
+generate the golang code for testing
+
+    $ ./gradlew
+    $ ./gradlew generateGolangCodecs
+
+For convenience on Linux, a gnu Makefile is provided that runs some
+tests and contains some examples
+
+    $ cd gocode
+    # make # test, examples, bench
+
+Users of golang generated code should see the [user
+documentation](https://github.com/real-logic/simple-binary-encoding/wiki/Golang-User-Guide).
+
+Developers wishing to enhance the golang generator should see the [developer
+documentation](https://github.com/real-logic/simple-binary-encoding/blob/master/gocode/README.md)
+
+
+C# Build
+--------
+As of May 2017, the CSharp build is considered a preview release. API stability is not yet guaranteed. User and Developer guides are not yet released or are incomplete.
+
+First build using Gradle to generate the SBE jar and then use it to generate the C# code used for testing and the examples.
+
+    $ ./gradlew
+    $ ./gradlew generateCSharpCodecs
+
+You can then use the [Visual Studio 2017 Community solution](https://github.com/real-logic/simple-binary-encoding/blob/master/csharp/csharp.sln) to build and explore the example. This solution also builds some tests which can be run via the provided [runtests.sh](https://github.com/real-logic/simple-binary-encoding/blob/master/csharp/runtests.sh) script.
+
+Users of CSharp generated code should see the [user documentation (coming)](https://github.com/real-logic/simple-binary-encoding/wiki/Csharp-User-Guide).
+
+Developers wishing to enhance the CSharp generator should see the [developer documentation (coming)](https://github.com/real-logic/simple-binary-encoding/blob/master/csharp/README.md)
+
 
 License (See LICENSE file for full license)
 -------------------------------------------
-Copyright 2013 Real Logic Limited
+Copyright 2014-2019 Real Logic Limited  
+Copyright 2017 MarketFactory Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,101 +143,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-Binaries
---------
-
-Binaries and dependency information for Maven, Ivy, Gradle, and others can be found at [http://search.maven.org](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22uk.co.real-logic%22%20AND%20a%3A%22sbe%22).
-
-Example for Maven:
-
-```xml
-<dependency>
-    <groupId>uk.co.real-logic</groupId>
-    <artifactId>sbe</artifactId>
-    <version>1.0-RC2</version>
-</dependency>
-```
-
-For .NET, you will find the [binaries on NuGet](http://www.nuget.org/packages/Adaptive.SBE/)
-
-Search for 'SBE' in NuGet or run the following command line in the NuGet console
-
-    Install-Package Adaptive.SBE
-
-
-Directory Layout
-----------------
-
-Main source code
-
-    main
-
-Unit tests
-
-    test
-
-Examples of usage
-
-    examples
-
-
-Build
------
-
-Full clean build:
-
-    $ ./gradlew
-
-Run the Java examples
-
-    $ ./gradlew runJavaExamples
-
-Distribution
-------------
-
-Jars for the executable, source, and javadoc can be found in
-
-    build/libs
-
-Android Build
--------------
-
-In order to build the android binaries you need to run the android:dist target 
-
-    $ ant android:dist
-
-As a prerequisite, you need Android SDK to be installed and the path needs to be configured inside `build-local.properties` file. 
-You need at least Android target 19 (it comes with Java 7 support) and Android build tools version at least 20.0.0. E.g. 
-
-    android.sdk.dir=/opt/android-sdk-linux
-    android.target=android-19
-    android.build.tools.version=20.0.0
-
-Android jars for the codec, source, and javadoc can be found in
-
-    target/dist
-
-C++ Build using CMake
----------------------
-
-NOTE: Linux, Mac OS, and Windows only for the moment. See [FAQ](https://github.com/real-logic/simple-binary-encoding/wiki/Frequently-Asked-Questions).
-Windows builds have been tested with Visual Studio Express 12.
-
-First build using gradle to generate the SBE jar.
-
-    $ ./gradlew
-
-Then build and test with CMake in the build subdirectory created by the gradle build.
-
-    $ cd build
-    $ cmake ..
-    $ cmake --build .
-    $ ctest
-
-C# Build
---------
-
-See [readme.md](https://github.com/real-logic/simple-binary-encoding/tree/master/vs2013) in vs2013 directory
-
-
